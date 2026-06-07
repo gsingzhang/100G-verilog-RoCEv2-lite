@@ -8,7 +8,7 @@ module true_dpram #
     parameter SIZE           = 1 << ADDR_WIDTH,
     parameter NPIPES         = 1,
     parameter INIT_VALUE     = {DATA_WIDTH{1'b0}},
-    parameter STYLE          = "bram"
+    parameter STYLE          = "auto"
 )
 (
     // Port A

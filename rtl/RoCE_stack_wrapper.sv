@@ -25,14 +25,14 @@ module RoCE_stack_wrapper #(
     input wire flow_ctrl_pause,
 
     // input Work request
-    input wire         s_wr_req_valid          [N_QUEUE_PAIRS-1:0],
-    input wire         s_wr_req_ready          [N_QUEUE_PAIRS-1:0],
-    input wire         s_wr_req_tx_type        [N_QUEUE_PAIRS-1:0], // 0 WRITE, 1 SEND
-    input wire         s_wr_req_is_immediate   [N_QUEUE_PAIRS-1:0],
-    input wire [31:0]  s_wr_req_immediate_data [N_QUEUE_PAIRS-1:0],
-    input wire [23:0]  s_wr_req_loc_qp         [N_QUEUE_PAIRS-1:0],
-    input wire [63:0]  s_wr_req_addr_offset    [N_QUEUE_PAIRS-1:0],
-    input wire [31:0]  s_wr_req_dma_length     [N_QUEUE_PAIRS-1:0], // for each transfer
+    input  wire         s_wr_req_valid          [N_QUEUE_PAIRS-1:0],
+    output wire         s_wr_req_ready          [N_QUEUE_PAIRS-1:0],
+    input  wire         s_wr_req_tx_type        [N_QUEUE_PAIRS-1:0], // 0 WRITE, 1 SEND
+    input  wire         s_wr_req_is_immediate   [N_QUEUE_PAIRS-1:0],
+    input  wire [31:0]  s_wr_req_immediate_data [N_QUEUE_PAIRS-1:0],
+    input  wire [23:0]  s_wr_req_loc_qp         [N_QUEUE_PAIRS-1:0],
+    input  wire [63:0]  s_wr_req_addr_offset    [N_QUEUE_PAIRS-1:0],
+    input  wire [31:0]  s_wr_req_dma_length     [N_QUEUE_PAIRS-1:0], // for each transfer
 
     // input QPs AXIS
     input  wire [QP_CH_DATA_WIDTH - 1 :0]  s_axis_tdata  [N_QUEUE_PAIRS-1:0],
@@ -158,6 +158,8 @@ module RoCE_stack_wrapper #(
 
     localparam N_AXI_RAM = RETRANSMISSION_ADDR_BUFFER_WIDTH >= 24 ? 8 : (RETRANSMISSION_ADDR_BUFFER_WIDTH >= 22 ? 4 : (RETRANSMISSION_ADDR_BUFFER_WIDTH >= 20 ? 2 : 1)); // needs to be a power of 2
     localparam INTERCONNECT_ADDR_WIDTH = RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_AXI_RAM);
+
+    wire flow_ctrl_pause_sync;
 
     // UDP frame connections to CM                
     wire                          rx_udp_cm_hdr_valid;
@@ -895,13 +897,9 @@ module RoCE_stack_wrapper #(
         .s_roce_bth_psn                 (m_roce_final_arb_bth_psn),
         .s_roce_bth_dest_qp             (m_roce_final_arb_bth_dest_qp),
         .s_roce_bth_ack_req             (m_roce_final_arb_bth_ack_req),
-        .s_roce_reth_valid              (m_roce_final_arb_reth_valid),
-        .s_roce_reth_ready              (m_roce_final_arb_reth_ready),
         .s_roce_reth_v_addr             (m_roce_final_arb_reth_v_addr),
         .s_roce_reth_r_key              (m_roce_final_arb_reth_r_key),
         .s_roce_reth_length             (m_roce_final_arb_reth_length),
-        .s_roce_immdh_valid             (m_roce_final_arb_immdh_valid),
-        .s_roce_immdh_ready             (m_roce_final_arb_immdh_ready),
         .s_roce_immdh_data              (m_roce_final_arb_immdh_data),
         .s_eth_dest_mac                 (48'd0),
         .s_eth_src_mac                  (48'd0),
@@ -959,7 +957,6 @@ module RoCE_stack_wrapper #(
         .m_udp_payload_axis_tuser       (tx_roce_udp_payload_axis_tuser),
 
         .busy                           (),
-        .error_payload_early_termination(),
         .RoCE_udp_port(ROCE_UDP_PORT)
     );
 
@@ -1293,6 +1290,19 @@ module RoCE_stack_wrapper #(
         .data_out({m_qp_context_spy_cdc, m_qp_local_qpn_spy_cdc})
     );
     */
+    xpm_cdc_array_single #(
+        .DEST_SYNC_FF(4),
+        .INIT_SYNC_FF(0),
+        .SIM_ASSERT_CHK(0),
+        .SRC_INPUT_REG(1),
+        .WIDTH(1)
+    )
+    sync_flow_ctrl_pause (
+        .src_clk(clk_stack),
+        .dest_clk(clk_roce_eng),
+        .src_in(flow_ctrl_pause),
+        .dest_out(flow_ctrl_pause_sync)
+    );
 
     xpm_cdc_array_single #(
         .DEST_SYNC_FF(4),
@@ -1783,7 +1793,7 @@ module RoCE_stack_wrapper #(
             AXI FULL INTERFACES
             */
             wire [0                :0]                  m_axi_awid;
-            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-1:0] m_axi_awaddr;
+            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_ROCE_TX_ENGINES)-1:0] m_axi_awaddr;
             wire [7:0]                                  m_axi_awlen;
             wire [2:0]                                  m_axi_awsize;
             wire [1:0]                                  m_axi_awburst;
@@ -1802,7 +1812,7 @@ module RoCE_stack_wrapper #(
             wire                                        m_axi_bvalid;
             wire                                        m_axi_bready;
             wire [0               :0]                   m_axi_arid;
-            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-1:0] m_axi_araddr;
+            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_ROCE_TX_ENGINES)-1:0] m_axi_araddr;
             wire [7:0]                                  m_axi_arlen;
             wire [2:0]                                  m_axi_arsize;
             wire [1:0]                                  m_axi_arburst;
@@ -1819,7 +1829,7 @@ module RoCE_stack_wrapper #(
             wire                                        m_axi_rready;
 
             wire [0                :0]                  m_axi_ram_awid;
-            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-1:0] m_axi_ram_awaddr;
+            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_ROCE_TX_ENGINES)-1:0] m_axi_ram_awaddr;
             wire [7:0]                                  m_axi_ram_awlen;
             wire [2:0]                                  m_axi_ram_awsize;
             wire [1:0]                                  m_axi_ram_awburst;
@@ -1838,7 +1848,7 @@ module RoCE_stack_wrapper #(
             wire                                        m_axi_ram_bvalid;
             wire                                        m_axi_ram_bready;
             wire [0               :0]                   m_axi_ram_arid;
-            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-1:0] m_axi_ram_araddr;
+            wire [RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_ROCE_TX_ENGINES)-1:0] m_axi_ram_araddr;
             wire [7:0]                                  m_axi_ram_arlen;
             wire [2:0]                                  m_axi_ram_arsize;
             wire [1:0]                                  m_axi_ram_arburst;
@@ -1908,7 +1918,7 @@ module RoCE_stack_wrapper #(
             ) RoCE_tx_engine_wrapper_instance (
                 .clk(clk_roce_eng),
                 .rst(rst_roce_eng),
-                .flow_ctrl_pause(flow_ctrl_pause),
+                .flow_ctrl_pause(flow_ctrl_pause_sync),
                 // RoCE ACKS
                 .s_roce_rx_bth_valid         (rx_roce_acks_fifo_bth_valid & s_selector_acks_tx_eng[i]),
                 .s_roce_rx_bth_ready         (rx_roce_acks_tx_eng_bth_ready[i]),
@@ -2180,7 +2190,8 @@ module RoCE_stack_wrapper #(
                 .ADDR_WIDTH(RETRANSMISSION_ADDR_BUFFER_WIDTH-$clog2(N_ROCE_TX_ENGINES)),
                 .STRB_WIDTH(OUT_KEEP_WIDTH),
                 .ID_WIDTH(1),
-                .READ_LATENCY(6)
+                .READ_LATENCY(8),
+                .RAM_STYLE("ultra")
             ) RoCE_axi_buffer_instance (
                 .clk(clk_roce_eng),
                 .rst(rst_roce_eng),
@@ -2405,14 +2416,15 @@ module RoCE_stack_wrapper #(
     generate
         if (DEBUG) begin
             //Histo params
-            localparam HISTO_DEPTH = 4096;
+            localparam HISTO_DEPTH = 2048;
+            localparam HISTO_DATA_WIDTH = 28;
 
             reg [3 :0] latency_inst_valid_pipes;
             reg [31:0] latency_inst_pipes [3:0];
 
             reg  [23:0]                    monitor_loc_qpn_del;
             wire                           histo_dout_valid;
-            wire [23:0]                    histo_latency;
+            wire [HISTO_DATA_WIDTH-1:0]    histo_latency;
             wire [$clog2(HISTO_DEPTH)-1:0] histo_index;
             wire                           rst_done_latency;
 
@@ -2439,8 +2451,8 @@ module RoCE_stack_wrapper #(
             histogrammer #(
                 .BRAM_SIZE       (HISTO_DEPTH),
                 .INPUT_DATA_WIDTH(32),
-                .HISTO_DATA_WIDTH(24),
-                .INPUT_VALUE_LSB (4) // granularity of CLOCK_PERIOD * 2**INPUT_VALUE_LSB, e.g. clock period = 3.3 ns and value of 4 will give you ~0.05us
+                .HISTO_DATA_WIDTH(HISTO_DATA_WIDTH),
+                .INPUT_VALUE_LSB (5) // granularity of CLOCK_PERIOD * 2**INPUT_VALUE_LSB, e.g. clock period = 3.3 ns and value of 4 will give you ~0.1us
             ) latency_histogrammer_instance (
                 .clk     (clk_roce_eng),
                 .rst     (rst_roce_eng || monitor_loc_qpn_del != monitor_loc_qpn_cdc), // reset when changing monitor qpn
@@ -2450,7 +2462,8 @@ module RoCE_stack_wrapper #(
                 .histo_dout_valid  (histo_dout_valid),
                 .histo_index_out   (histo_index),
                 .histo_dout        (histo_latency),
-                .rst_done(rst_done_latency)
+                .rst_done(rst_done_latency),
+                .histo_overflow()
             );
 
             ila_latency_distrib ila_latency_distrib_instance(

@@ -4,9 +4,13 @@
 module network_wrapper_roce_generic #(
     parameter MAC_DATA_WIDTH = 1024,
     parameter STACK_DATA_WIDTH = 1024,
+    parameter QP_CH_DATA_WIDTH = STACK_DATA_WIDTH,   
+    parameter QP_CH_KEEP_ENABLE = QP_CH_DATA_WIDTH > 8,  
+    parameter QP_CH_KEEP_WIDTH = QP_CH_DATA_WIDTH/8,   
     parameter R0CE_ENG_CLK_PERIOD = 3.000, // in ns, needed to compute RNR timer values
     parameter N_ROCE_TX_ENGINES = 1,
     parameter N_QUEUE_PAIRS = 4,
+    parameter RETRANSMISSION_ADDR_BUFFER_WIDTH = 23,
     parameter FIFO_REGS = 4,
     parameter ASYNC_MAC_STACK = 1,
     parameter ENABLE_PFC = 0,
@@ -301,7 +305,6 @@ module network_wrapper_roce_generic #(
 
             eth_pfc_fifo_tx #(
                 .DATA_WIDTH(MAC_DATA_WIDTH),
-                // TODO optimize fifo depth, considering that for wider datapath muliple BRAM will be used in parallel
                 // And the minimum depth would be 512, so why not use all of them rather than underutilize them
                 .FIFO_DEPTH(OPTIMAL_FIFO_SIZE), 
                 .OUTPUT_SRL_REG(0)
@@ -329,6 +332,7 @@ module network_wrapper_roce_generic #(
                 .pause_req(pfc_pause_req),
                 .pause_ack(pfc_pause_ack)
             );
+
         end else begin
             assign m_tx_axis_srl_fifo_tdata   = m_tx_axis_pfc_tdata;
             assign m_tx_axis_srl_fifo_tkeep   = m_tx_axis_pfc_tkeep;
@@ -352,7 +356,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) rx_axis_adapter_fifo (
                     .s_clk(clk_mac),
@@ -390,7 +394,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) tx_axis_adapter_fifo (
                     .s_clk(clk_stack),
@@ -426,7 +430,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) rx_axis_async_fifo (
                     .s_clk(clk_mac),
@@ -461,7 +465,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) tx_axis_async_fifo (
                     .s_clk(clk_stack),
@@ -501,7 +505,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) rx_axis_adapter_fifo (
                     .clk(clk_mac),
@@ -536,7 +540,7 @@ module network_wrapper_roce_generic #(
                     .DEST_ENABLE(0),
                     .USER_ENABLE(1),
                     .USER_WIDTH(1),
-                    .RAM_PIPELINE(2),
+                    .RAM_PIPELINE(1),
                     .FRAME_FIFO(0)
                 ) tx_axis_adapter_fifo (
                     .clk(clk_mac),
@@ -631,8 +635,8 @@ module network_wrapper_roce_generic #(
     udp_complete_opt #(
         .DATA_WIDTH(STACK_DATA_WIDTH),
         .ARP_CACHE_ADDR_WIDTH(9),
-        .ARP_REQUEST_RETRY_INTERVAL(425000000*2),
-        .ARP_REQUEST_TIMEOUT(425000000*30),
+        .ARP_REQUEST_RETRY_INTERVAL(411000000*2),
+        .ARP_REQUEST_TIMEOUT(411000000*30),
         .ENABLE_DOT1Q_HEADER(0),
         .HEADER_CHECKSUM_PIPELINED(1),
         .ROCE_ICRC_INSERTER(1)
@@ -713,16 +717,16 @@ module network_wrapper_roce_generic #(
     );
 
     RoCE_stack_wrapper #(
-        .QP_CH_DATA_WIDTH                (STACK_DATA_WIDTH/4),
-        .QP_CH_KEEP_ENABLE               (1),
-        .QP_CH_KEEP_WIDTH                (STACK_DATA_WIDTH/4/8),
+        .QP_CH_DATA_WIDTH                (QP_CH_DATA_WIDTH),
+        .QP_CH_KEEP_ENABLE               (QP_CH_KEEP_ENABLE),
+        .QP_CH_KEEP_WIDTH                (QP_CH_KEEP_WIDTH),
         .OUT_DATA_WIDTH                  (STACK_DATA_WIDTH),
         .OUT_KEEP_ENABLE                 (1),
         .OUT_KEEP_WIDTH                  (STACK_DATA_WIDTH/8),
         .CLOCK_PERIOD                    (R0CE_ENG_CLK_PERIOD),
         .DEBUG                           (DEBUG),
         .REFRESH_CACHE_TICKS             (32767),
-        .RETRANSMISSION_ADDR_BUFFER_WIDTH(23),
+        .RETRANSMISSION_ADDR_BUFFER_WIDTH(RETRANSMISSION_ADDR_BUFFER_WIDTH),
         .N_ROCE_TX_ENGINES               (N_ROCE_TX_ENGINES),
         .N_QUEUE_PAIRS                   (N_QUEUE_PAIRS) // must be a power of two
     ) RoCE_stack_wrapper_instance (
@@ -732,7 +736,7 @@ module network_wrapper_roce_generic #(
         .clk_roce_eng(clk_roce_eng),
         .rst_roce_eng(rst_roce_eng),
 
-        .flow_ctrl_pause          (flow_ctrl_pause),
+        .flow_ctrl_pause          (flow_ctrl_pause), // roce ang domain
 
         // TODO forward these signals outside
         // clk roce eng  domain

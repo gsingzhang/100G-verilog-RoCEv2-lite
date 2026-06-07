@@ -42,7 +42,9 @@ module axi_ram_xpm #
     // Width of ID signal
     parameter ID_WIDTH = 8,
     // ram read latency
-    parameter READ_LATENCY = 2
+    parameter READ_LATENCY = 2,
+    // RAM style
+    parameter RAM_STYLE = "auto"
 )
 (
     input  wire                   clk,
@@ -88,11 +90,6 @@ module axi_ram_xpm #
     parameter VALID_ADDR_WIDTH = ADDR_WIDTH - $clog2(STRB_WIDTH);
     parameter WORD_WIDTH = STRB_WIDTH;
     parameter WORD_SIZE = DATA_WIDTH/WORD_WIDTH;
-
-    parameter BIGGEST_MEM_ADDR_WIDTH  = 14 + $clog2(STRB_WIDTH);
-    parameter VALID_ADDR_WIDTH_SINGLE = (ADDR_WIDTH > BIGGEST_MEM_ADDR_WIDTH) ?  BIGGEST_MEM_ADDR_WIDTH - $clog2(STRB_WIDTH) : ADDR_WIDTH - $clog2(STRB_WIDTH);
-    parameter N_RAMS                  = (ADDR_WIDTH > BIGGEST_MEM_ADDR_WIDTH) ?  2**(ADDR_WIDTH-BIGGEST_MEM_ADDR_WIDTH) : 1;
-    parameter N_RAMS_WIDTH            = (ADDR_WIDTH > BIGGEST_MEM_ADDR_WIDTH) ?  ADDR_WIDTH-BIGGEST_MEM_ADDR_WIDTH : 1;
 
     // bus width assertions
     initial begin
@@ -164,56 +161,56 @@ module axi_ram_xpm #
 
 
     xpm_memory_sdpram #(
-                .ADDR_WIDTH_A(VALID_ADDR_WIDTH), // DECIMAL
-                .ADDR_WIDTH_B(VALID_ADDR_WIDTH), // DECIMAL
-                .AUTO_SLEEP_TIME(0), // DECIMAL
-                .BYTE_WRITE_WIDTH_A(DATA_WIDTH/STRB_WIDTH), // DECIMAL
-                .CASCADE_HEIGHT(READ_LATENCY), // DECIMAL
-                .CLOCKING_MODE("common_clock"), // String
-                .ECC_BIT_RANGE("7:0"), // String
-                .ECC_MODE("no_ecc"), // String
-                .ECC_TYPE("none"), // String
-                .IGNORE_INIT_SYNTH(0), // DECIMAL
-                .MEMORY_INIT_FILE("none"), // String
-                .MEMORY_INIT_PARAM("0"), // String
-                .MEMORY_OPTIMIZATION("true"), // String
-                .MEMORY_PRIMITIVE("ultra"), // String
-                .MEMORY_SIZE(2**(VALID_ADDR_WIDTH)*DATA_WIDTH), // DECIMAL
-                .MESSAGE_CONTROL(0), // DECIMAL
-                .READ_DATA_WIDTH_B(DATA_WIDTH), // DECIMAL
-                .READ_LATENCY_B(READ_LATENCY), // DECIMAL
-                .READ_RESET_VALUE_B("0"), // String
-                .RST_MODE_A("SYNC"), // String
-                .RST_MODE_B("SYNC"), // String
-                .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-                .USE_EMBEDDED_CONSTRAINT(0), // DECIMAL
-                .USE_MEM_INIT(0), // DECIMAL
-                .USE_MEM_INIT_MMI(0), // DECIMAL
-                .WAKEUP_TIME("disable_sleep"), // String
-                .WRITE_DATA_WIDTH_A(DATA_WIDTH), // DECIMAL
-                .WRITE_MODE_B("read_first"), // String
-                .WRITE_PROTECT(1) // DECIMAL
-            )
-            hdr_ram_instance (
-                .dbiterrb(),
-                .doutb(ramout),
-                .sbiterrb(),
-                .addra(write_addr_valid),
-                .addrb(read_addr_valid),
-                .clka(clk),
-                .clkb(clk),
-                .dina(s_axi_wdata),
-                .ena(1),
-                .enb(mem_rd_en),
-                .injectdbiterra(0),
-                .injectsbiterra(0),
-                .regceb(1),
-                .rstb(rst),
-                .sleep(0),
-                .wea(s_axi_wstrb & {STRB_WIDTH{mem_wr_en}})
+        .ADDR_WIDTH_A(VALID_ADDR_WIDTH), // DECIMAL
+        .ADDR_WIDTH_B(VALID_ADDR_WIDTH), // DECIMAL
+        .AUTO_SLEEP_TIME(0), // DECIMAL
+        .BYTE_WRITE_WIDTH_A(DATA_WIDTH/STRB_WIDTH), // DECIMAL
+        .CASCADE_HEIGHT(READ_LATENCY), // DECIMAL
+        .CLOCKING_MODE("common_clock"), // String
+        .ECC_BIT_RANGE("7:0"), // String
+        .ECC_MODE("no_ecc"), // String
+        .ECC_TYPE("none"), // String
+        .IGNORE_INIT_SYNTH(0), // DECIMAL
+        .MEMORY_INIT_FILE("none"), // String
+        .MEMORY_INIT_PARAM("0"), // String
+        .MEMORY_OPTIMIZATION("true"), // String
+        .MEMORY_PRIMITIVE(RAM_STYLE), // String
+        .MEMORY_SIZE(2**(VALID_ADDR_WIDTH)*DATA_WIDTH), // DECIMAL
+        .MESSAGE_CONTROL(0), // DECIMAL
+        .READ_DATA_WIDTH_B(DATA_WIDTH), // DECIMAL
+        .READ_LATENCY_B(READ_LATENCY), // DECIMAL
+        .READ_RESET_VALUE_B("0"), // String
+        .RST_MODE_A("SYNC"), // String
+        .RST_MODE_B("SYNC"), // String
+        .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_EMBEDDED_CONSTRAINT(0), // DECIMAL
+        .USE_MEM_INIT(0), // DECIMAL
+        .USE_MEM_INIT_MMI(0), // DECIMAL
+        .WAKEUP_TIME("disable_sleep"), // String
+        .WRITE_DATA_WIDTH_A(DATA_WIDTH), // DECIMAL
+        .WRITE_MODE_B("read_first"), // String
+        .WRITE_PROTECT(1) // DECIMAL
+    )
+    ram_instance (
+        .dbiterrb(),
+        .doutb(ramout),
+        .sbiterrb(),
+        .addra(write_addr_valid),
+        .addrb(read_addr_valid),
+        .clka(clk),
+        .clkb(clk),
+        .dina(s_axi_wdata),
+        .ena(1),
+        .enb(mem_rd_en),
+        .injectdbiterra(0),
+        .injectsbiterra(0),
+        .regceb(1),
+        .rstb(rst),
+        .sleep(0),
+        .wea(s_axi_wstrb & {STRB_WIDTH{mem_wr_en}})
 
-            );
-    
+    );
+
 
     assign s_axi_awready = s_axi_awready_reg;
     assign s_axi_wready = s_axi_wready_reg;
@@ -223,7 +220,7 @@ module axi_ram_xpm #
     assign s_axi_arready = s_axi_arready_reg;
     assign s_axi_rresp  = 2'b00;
 
-    
+
 
     always @* begin
         write_state_next = WRITE_STATE_IDLE;
@@ -358,7 +355,7 @@ module axi_ram_xpm #
             end
             READ_STATE_BURST: begin
                 //if (s_axi_rready || !ram_rvalid_pipe_reg[0]) begin 
-                if (s_axi_rready) begin    
+                if (s_axi_rready) begin
                     mem_rd_en = 1'b1;
                     s_axi_rvalid_next = 1'b1;
                     s_axi_rid_next = read_id_reg;
@@ -392,8 +389,8 @@ module axi_ram_xpm #
         s_axi_arready_reg <= s_axi_arready_next;
 
         // just pipe the signals to be aligned with the ram
-        ram_rid_pipe_reg <= {ram_rid_pipe_reg[READ_LATENCY-2:0], s_axi_rid_next};   
-        ram_rlast_pipe_reg <= {ram_rlast_pipe_reg[READ_LATENCY-2:0], s_axi_rlast_next}; 
+        ram_rid_pipe_reg <= {ram_rid_pipe_reg[READ_LATENCY-2:0], s_axi_rid_next};
+        ram_rlast_pipe_reg <= {ram_rlast_pipe_reg[READ_LATENCY-2:0], s_axi_rlast_next};
         ram_rvalid_pipe_reg <= {ram_rvalid_pipe_reg[READ_LATENCY-2:0], s_axi_rvalid_next};
 
 
@@ -410,7 +407,7 @@ module axi_ram_xpm #
     end
 
     axis_fifo #(
-        .DEPTH(READ_LATENCY+1), // to absorb rready deassertion
+        .DEPTH       (READ_LATENCY+1), // to absorb rready deassertion
         .DATA_WIDTH  (DATA_WIDTH),
         .KEEP_ENABLE (0),
         .ID_ENABLE   (1),

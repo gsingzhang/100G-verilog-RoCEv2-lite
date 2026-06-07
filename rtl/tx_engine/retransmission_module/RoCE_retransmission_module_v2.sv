@@ -12,8 +12,8 @@ module RoCE_retransmission_module_v2 #(
 ) (
     input wire clk,
     input wire rst,
-    // TODO add this!!
-    input wire flow_ctrl_pause, // stops timeout counter 
+    
+    input wire flow_ctrl_pause, // halt timeout counter when pause is active
     /*
      * RoCE RX ACKed PSNs
      */
@@ -309,6 +309,8 @@ module RoCE_retransmission_module_v2 #(
     reg [$clog2(MAX_QPS)-1:0] m_cpl_table_qpn_rst;
     reg [24-1:0]              m_cpl_table_psn_rst;
 
+    reg flow_ctrl_pause_reg;
+
     wire roce_rx_aeth_ready;
 
 
@@ -329,6 +331,8 @@ module RoCE_retransmission_module_v2 #(
             m_cpl_table_we_rst  <= 1'b0;
             m_cpl_table_qpn_rst <= 'd0;
             m_cpl_table_psn_rst <= 24'd0;
+
+            flow_ctrl_pause_reg <= 1'b0;
         end else begin
             if (rtr_wr_qp_close_valid) begin
                 m_rd_table_we_rst  <= 1'b1;
@@ -367,6 +371,8 @@ module RoCE_retransmission_module_v2 #(
                 m_cpl_table_qpn_rst <= 'd0;
                 m_cpl_table_psn_rst <= 24'd0;
             end
+
+            flow_ctrl_pause_reg <= flow_ctrl_pause;
         end
     end
 
@@ -480,6 +486,8 @@ module RoCE_retransmission_module_v2 #(
         .s_roce_rx_bth_dest_qp       (s_roce_rx_bth_dest_qp),
 
         .s_roce_rx_last_not_acked_psn(0),
+
+        .flow_ctrl_pause(flow_ctrl_pause_reg),
 
         .m_roce_bth_valid  (m_roce_bth_valid),
         .m_roce_bth_ready  (m_roce_bth_ready),

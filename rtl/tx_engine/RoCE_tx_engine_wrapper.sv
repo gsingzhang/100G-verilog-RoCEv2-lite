@@ -35,14 +35,14 @@ module RoCE_tx_engine_wrapper #(
     input  wire [ 23:0] s_roce_rx_last_not_acked_psn,
 
     // input Work request
-    input wire         s_wr_req_valid          [N_QUEUE_PAIRS-1:0],
-    input wire         s_wr_req_ready          [N_QUEUE_PAIRS-1:0],
-    input wire         s_wr_req_tx_type        [N_QUEUE_PAIRS-1:0], // 0 WRITE, 1 SEND
-    input wire         s_wr_req_is_immediate   [N_QUEUE_PAIRS-1:0],
-    input wire [31:0]  s_wr_req_immediate_data [N_QUEUE_PAIRS-1:0],
-    input wire [23:0]  s_wr_req_loc_qp         [N_QUEUE_PAIRS-1:0],
-    input wire [63:0]  s_wr_req_addr_offset    [N_QUEUE_PAIRS-1:0],
-    input wire [31:0]  s_wr_req_dma_length     [N_QUEUE_PAIRS-1:0], // for each transfer
+    input  wire         s_wr_req_valid          [N_QUEUE_PAIRS-1:0],
+    output wire         s_wr_req_ready          [N_QUEUE_PAIRS-1:0],
+    input  wire         s_wr_req_tx_type        [N_QUEUE_PAIRS-1:0], // 0 WRITE, 1 SEND
+    input  wire         s_wr_req_is_immediate   [N_QUEUE_PAIRS-1:0],
+    input  wire [31:0]  s_wr_req_immediate_data [N_QUEUE_PAIRS-1:0],
+    input  wire [23:0]  s_wr_req_loc_qp         [N_QUEUE_PAIRS-1:0],
+    input  wire [63:0]  s_wr_req_addr_offset    [N_QUEUE_PAIRS-1:0],
+    input  wire [31:0]  s_wr_req_dma_length     [N_QUEUE_PAIRS-1:0], // for each transfer
 
     // input QPs AXIS
     input  wire [QP_CH_DATA_WIDTH - 1 :0]  s_axis_tdata  [N_QUEUE_PAIRS-1:0],
@@ -780,7 +780,7 @@ module RoCE_tx_engine_wrapper #(
     ) RoCE_retransmission_module_v2_instance (
         .clk(clk),
         .rst(rst),
-        .flow_ctrl_pause(flow_ctrl_pause),
+        .flow_ctrl_pause             (flow_ctrl_pause),
         .s_roce_rx_bth_valid         (s_roce_rx_bth_valid    ),
         .s_roce_rx_bth_ready         (s_roce_rx_bth_ready    ),
         .s_roce_rx_bth_psn           (s_roce_rx_bth_psn      ),
