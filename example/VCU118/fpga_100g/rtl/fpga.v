@@ -34,9 +34,9 @@ module fpga (
      * Clock: 125MHz LVDS
      * Reset: Push button, active low
      */
-    input wire clk_125mhz_p,
-    input wire clk_125mhz_n,
-    input wire reset,
+    input wire clk_100mhz_p,
+    input wire clk_100mhz_n,
+    input wire reset_n,
 
     /*
      * GPIO
@@ -72,7 +72,7 @@ module fpga (
     output wire       qsfp1_resetl,
     input  wire       qsfp1_modprsl,
     input  wire       qsfp1_intl,
-    output wire       qsfp1_lpmode,
+    output wire       qsfp1_lpmode/*,
 
     output wire [3:0] qsfp2_tx_p,
     output wire [3:0] qsfp2_tx_n,
@@ -88,12 +88,12 @@ module fpga (
     output wire       qsfp2_resetl,
     input  wire       qsfp2_modprsl,
     input  wire       qsfp2_intl,
-    output wire       qsfp2_lpmode
+    output wire       qsfp2_lpmode*/
 );
 
   // Clock and reset
 
-  wire clk_125mhz_ibufg;
+  wire clk_100mhz_ibufg;
 
   // Internal 125 MHz clock
   wire clk_125mhz_mmcm_out;
@@ -114,20 +114,20 @@ module fpga (
   IBUFGDS #(
       .DIFF_TERM("FALSE"),
       .IBUF_LOW_PWR("FALSE")
-  ) clk_125mhz_ibufg_inst (
-      .O (clk_125mhz_ibufg),
-      .I (clk_125mhz_p),
-      .IB(clk_125mhz_n)
+  ) clk_100mhz_ibufg_inst (
+      .O (clk_100mhz_ibufg),
+      .I (clk_100mhz_p),
+      .IB(clk_100mhz_n)
   );
   
   vio_ext_rst VIO_ext_rst_inst (
-     .clk(clk_125mhz_ibufg),
+     .clk(clk_100mhz_ibufg),
      .probe_out0(mmcm_rst_ext),
      .probe_out1(cmac_rst_ext)
      
   );
   
-  assign mmcm_rst = reset | mmcm_rst_ext; 
+  assign mmcm_rst = ~reset_n | mmcm_rst_ext; 
   
   
   // MMCM instance
@@ -159,15 +159,15 @@ module fpga (
       .CLKOUT6_DIVIDE(1),
       .CLKOUT6_DUTY_CYCLE(0.5),
       .CLKOUT6_PHASE(0),
-      .CLKFBOUT_MULT_F(8),
+      .CLKFBOUT_MULT_F(10),
       .CLKFBOUT_PHASE(0),
       .DIVCLK_DIVIDE(1),
       .REF_JITTER1(0.010),
-      .CLKIN1_PERIOD(8.0),
+      .CLKIN1_PERIOD(10.0),
       .STARTUP_WAIT("FALSE"),
       .CLKOUT4_CASCADE("FALSE")
   ) clk_mmcm_inst (
-      .CLKIN1(clk_125mhz_ibufg),
+      .CLKIN1(clk_100mhz_ibufg),
       .CLKFBIN(mmcm_clkfb),
       .RST(mmcm_rst),
       .PWRDWN(1'b0),
@@ -409,7 +409,7 @@ module fpga (
   );
 
   // QSFP2 CMAC
-  
+`ifdef 0  
   assign qsfp2_modsell = 1'b0;
   assign qsfp2_resetl  = 1'b1;
   assign qsfp2_lpmode  = 1'b0;
@@ -532,7 +532,7 @@ module fpga (
       .rx_pfc_req(qsfp2_rx_pfc_req),
       .rx_pfc_ack(qsfp2_rx_pfc_ack)
   );
- 
+ `endif
  /*
  ila_axis ila_eth_rx(
     .clk(qsfp1_rx_clk_int),
@@ -709,7 +709,7 @@ ila_axis ila_eth_tx(
       .qsfp1_drp_en  (qsfp1_drp_en),
       .qsfp1_drp_we  (qsfp1_drp_we),
       .qsfp1_drp_do  (qsfp1_drp_do),
-      .qsfp1_drp_rdy (qsfp1_drp_rdy),
+      .qsfp1_drp_rdy (qsfp1_drp_rdy)/*,
 
       .qsfp2_tx_axis_tdata  (qsfp2_tx_axis_tdata_int),
       .qsfp2_tx_axis_tkeep  (qsfp2_tx_axis_tkeep_int),
@@ -736,7 +736,7 @@ ila_axis ila_eth_tx(
       .qsfp2_drp_en  (qsfp2_drp_en),
       .qsfp2_drp_we  (qsfp2_drp_we),
       .qsfp2_drp_do  (qsfp2_drp_do),
-      .qsfp2_drp_rdy (qsfp2_drp_rdy)
+      .qsfp2_drp_rdy (qsfp2_drp_rdy)*/
   );
 
 endmodule

@@ -557,7 +557,7 @@ module fpga_core #(
         .CLOCK_PERIOD                    (1000/322.266),
         .DEBUG                           (1),
         .REFRESH_CACHE_TICKS             (32767),
-        .RETRANSMISSION_ADDR_BUFFER_WIDTH(21),
+        .RETRANSMISSION_ADDR_BUFFER_WIDTH(20),
         .N_ROCE_TX_ENGINES               (1),
         .N_QUEUE_PAIRS                   (8)
         // Addr buffer 23 bits and 4 QP --> 2**23=8MB, 8MB/4QP = 2MB/QP --> 168 us/qp buffering time (all PMTU packets)

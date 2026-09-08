@@ -3,7 +3,6 @@ header_files/RoCE_parameters.sv
 utils/network_wrapper_roce_generic.sv
 utils/generic_arb_mux.v
 utils/generic_mux.v
-utils/generic_hdr_payload_fifo.v
 utils/dcmac_pad.v
 utils/AXIseg_2_AXIs/axis_2_axi_seg.sv
 utils/AXIseg_2_AXIs/axis_2_axi_seg_simple.sv
@@ -15,7 +14,7 @@ utils/AXIseg_2_AXIs/unaligned_axi_seg_2_axis.sv
 utils/sync_bit_array.v
 icrc_insert/axis_mask_fields_icrc.v
 icrc_insert/axis_RoCE_icrc_insert.v
-data_gen/axis_data_generator_mod.sv
+data_gen/axis_data_generator.sv
 data_gen/RoCE_data_generator.sv
 tx_engine/axis_packet_framer.sv
 tx_engine/RoCE_immdh_reth_tx.sv
@@ -40,6 +39,7 @@ utils/latency_measure/histogrammer.sv
 utils/axis_handshake_monitor.vhd
 RoCE_simple_work_queue.sv
 utils/RoCE_packet_dropper.sv
+utils/RoCE_arb_mux.sv
 utils/simple_dpram.v
 utils/true_dpram.v
 utils/axi_ram_mod.v	

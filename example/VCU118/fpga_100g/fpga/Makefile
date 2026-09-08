@@ -1,8 +1,10 @@
 
 # FPGA settings
-FPGA_PART = xcvu9p-flga2104-2L-e
-FPGA_TOP = fpga
-FPGA_ARCH = virtexuplus
+#FPGA_PART = xcvu9p-flga2104-2L-e
+FPGA_PART = XCKU5P-FFVB676-1-e
+#FPGA_TOP = fpga
+#FPGA_ARCH = virtexuplus
+FPGA_ARCH = kintexuplus
 
 # Files for synthesis
 SYN_FILES = rtl/fpga.v
@@ -92,6 +94,9 @@ SYN_FILES +=  lib/RoCE/rtl/tx_engine/retransmission_module/RoCE_retransmission_m
 SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_tx_queue.sv
 SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_realign_frame_fifo.sv
 SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_tx_engine_wrapper.sv
+SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_immdh_reth_tx.sv
+SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_reth_bth_tx.sv
+SYN_FILES +=  lib/RoCE/rtl/tx_engine/RoCE_bth_udp_tx.sv
 SYN_FILES +=  lib/RoCE/rtl/rx_engine/RoCE_udp_rx_acks.sv
 SYN_FILES +=  lib/RoCE/rtl/connection_manager/udp_RoCE_connection_manager_rx.sv
 SYN_FILES +=  lib/RoCE/rtl/connection_manager/udp_RoCE_connection_manager_tx.sv

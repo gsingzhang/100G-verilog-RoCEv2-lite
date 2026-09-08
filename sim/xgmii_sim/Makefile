@@ -47,7 +47,8 @@ VSIM = vsim
 VDPI = vlog
 endif
 
-VIVADO_PATH ?= /tools/Xilinx/Vivado/2022.2
+#VIVADO_PATH ?= /tools/Xilinx/Vivado/2022.2
+VIVADO_PATH ?= /home/gxzhang/gx/gxprogram/xilinx/2025.2.1
 
 XILINX  = $(VIVADO_PATH)/data/vhdl/src/unisims
 XPM     = $(VIVADO_PATH)/data/ip/xpm/
