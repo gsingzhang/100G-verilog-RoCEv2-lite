@@ -8,8 +8,11 @@ Change them as required
 - `LICENCE_SERVER`: Licence server required to run QUESTA
 - `VIVADO_PATH`: VIVADO installation path, default is `/tools/Xilinx/Vivado/2022.2`
 ## Compile the HDL modules
+The source filelist is taken from the synthesis filelist (`SYN_FILES`) of the
+`example/VCU118/fpga_100g` project, plus the sim-only files listed in
+`sim_extra_files.txt`.
 ```
-make verilog-ethernet crc-pkg RoCE-stack simlog SIMULATOR=VIVADO VIVADO_PATH=<Your-vivado-path>
+make comp SIMULATOR=VIVADO VIVADO_PATH=<Your-vivado-path>
 ```
 ## Open the TAP device tapdev
 ```

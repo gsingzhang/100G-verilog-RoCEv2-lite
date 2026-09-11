@@ -103,8 +103,7 @@ module top #(
       .TX_FRAME_FIFO(1),
       .RX_FIFO_DEPTH(4200),
       .RX_FRAME_FIFO(1),
-      .PFC_ENABLE(1),
-      .PFC_FIFO_ENABLE(8'd3)
+      .PFC_ENABLE(1)
   ) eth_mac_10g_fifo_inst (
       .rx_clk(clk_mac_sim),
       .rx_rst(xgmii_rx_rst),
@@ -246,6 +245,8 @@ module top #(
     .rst_mac(rst),
     .clk_stack(clk_stack),
     .rst_stack(rst),
+    .clk_roce_eng(clk_stack),
+    .rst_roce_eng(rst),
     .flow_ctrl_pause         (tx_pause_req[1] || tx_pause_req[8]),
     .m_network_tx_axis_tdata (tx_generic_fifo_axis_tdata),
     .m_network_tx_axis_tkeep (tx_generic_fifo_axis_tkeep),
@@ -274,10 +275,13 @@ module top #(
     .pfc_pause_req(8'd0),
     .pfc_pause_ack(),
     
-    .transfer_time_avg      (),
-    .transfer_time_inst     (),
-    .latency_avg            (),
-    .latency_inst           (),
+    .transfer_time_avg       (),
+    .transfer_time_moving_avg(),
+    .latency_avg             (),
+    .latency_moving_avg      (),
+    .psn_diff                (),
+    .n_retransmit_triggers   (),
+    .n_rnr_retransmit_triggers(),
     .cfg_latency_avg_po2    (4'd4),
     .cfg_throughput_avg_po2 (5'd4),
     .monitor_loc_qpn        (24'd256)

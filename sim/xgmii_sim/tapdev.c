@@ -41,6 +41,7 @@ void shared_mem_init()
     int size = sizeof( RingBuffer_t );
     int fd = shm_open( SHM_ID_TAP2MAC, O_RDWR | O_CREAT, 0666);
     if ( fd < 0) {perror("Shared memory error:"); exit(-1);}
+    if(fchmod( fd, 0666 ) < 0) {perror("fchmod"); exit(-1);}
     if(ftruncate( fd, size+1 ) < 0) {perror("ftruncate"); exit(-1);}
 
     // create shared memory area
@@ -50,6 +51,7 @@ void shared_mem_init()
 
     fd = shm_open( SHM_ID_MAC2TAP, O_RDWR | O_CREAT, 0666 );
     if ( fd < 0) {perror("Shared memory error:"); exit(-1);}
+    if(fchmod( fd, 0666 ) < 0) {perror("fchmod"); exit(-1);}
     if(ftruncate( fd, size+1 ) < 0) {perror("ftruncate"); exit(-1);}
 
     // create shared memory area

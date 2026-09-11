@@ -4,25 +4,18 @@ TARGET_DPI = tb_svdpi
 BUILD_DIR = work
 SIMULATOR ?= VIVADO
 MAIN_DIR ?= ../..
-LICENCE_SERVER ?=  
+LICENCE_SERVER ?=
 
 TARGET_TAP_PID_FILE = tapdev.pid
 
-
-ETH_MODULES     = eth_modules.txt
-ROCE_MODULES = roce_modules.txt
-
-ETH_VERILOG_DIR = $(MAIN_DIR)/lib/eth
-CRC32_DIR = $(MAIN_DIR)/lib/FAST_CRC32
-ROCE_DIR = $(MAIN_DIR)/rtl
-ROCE_DIR_SIM = $(MAIN_DIR)/sim
+SIM_EXTRA_LIST = sim_extra_files.txt
 
 ifeq ($(SIMULATOR), VIVADO)
 VLOG = xvlog
 VHD  = xvhdl
 VSIM = xsim
 VDPI = xsc
-VLOG_SV_OPT = -svlog
+VLOG_SV_OPT = -sv
 VOPTARGS =
 VSIMCMDS = -gui -tclbatch run.tcl
 else ifeq ($(SIMULATOR), QUESTA)
@@ -38,7 +31,7 @@ VLOG = vlog
 VHD  = cvom
 VSIM = vsim
 VDPI = vlog
-VOPTARGS = 
+VOPTARGS =
 VSIMCMDS = -do "run -all"
 else
 VLOG = vlog
@@ -47,7 +40,6 @@ VSIM = vsim
 VDPI = vlog
 endif
 
-#VIVADO_PATH ?= /tools/Xilinx/Vivado/2022.2
 VIVADO_PATH ?= /home/gxzhang/gx/gxprogram/xilinx/2025.2.1
 
 XILINX  = $(VIVADO_PATH)/data/vhdl/src/unisims
@@ -55,32 +47,37 @@ XPM     = $(VIVADO_PATH)/data/ip/xpm/
 XPM_MEM = $(VIVADO_PATH)/data/ip/xpm/xpm_memory/hdl
 CC = gcc -lrt
 CFLAGS = -Wall -O -lrt
-VLIB = vlib
 
-define compile_modules
-	@while read -r module; do \
-		ext="$$(echo $$module | awk -F. '{print $$NF}')"; \
-		full_module_path="$(1)/$$module"; \
-		if [ "$$ext" = "vhd" ]; then \
-			$(VHD) -work work $$full_module_path; \
-		elif [ "$$ext" = "v" ]; then \
-			$(VLOG) -work work $$full_module_path; \
-		elif [ "$$ext" = "sv" ]; then \
-			$(VLOG) -work work $(VLOG_SV_OPT) $$full_module_path; \
-		fi \
-	done < $(2)
-endef
+# Source list: single source of truth is the synthesis filelist of the
+# fpga_100g project (paths relative to FPGA_PROJ_DIR).
+FPGA_PROJ_DIR = $(MAIN_DIR)/example/VCU118/fpga_100g
+FPGA_MK = $(FPGA_PROJ_DIR)/fpga/Makefile
+SYN_FILES := $(shell awk '/^SYN_FILES \+=/{sub(/^SYN_FILES \+= */,"");print}' $(FPGA_MK))
+
+# fpga-only sources not needed in sim: top level, board glue, CMAC IP wrappers
+FPGA_ONLY = rtl/fpga.v rtl/fpga_core.sv rtl/eth_xcvr_phy_wrapper.v \
+	rtl/eth_xcvr_phy_quad_wrapper.v rtl/debounce_switch.v rtl/sync_signal.v \
+	ip/cmac_gty_wrapper.v ip/cmac_gty_ch_wrapper.v ip/cmac_pad.v
+
+SYN_SIM_FILES := $(filter-out $(FPGA_ONLY),$(SYN_FILES))
+
+SYN_VHD := $(filter %.vhd,$(SYN_SIM_FILES))
+SYN_V   := $(filter %.v,$(SYN_SIM_FILES))
+SYN_SV  := $(filter %.sv,$(SYN_SIM_FILES))
+
+EXTRA_VHD := $(shell awk -F. '$$NF=="vhd"' $(SIM_EXTRA_LIST))
+EXTRA_V   := $(shell awk -F. '$$NF=="v"' $(SIM_EXTRA_LIST))
+EXTRA_SV  := $(shell awk -F. '$$NF=="sv"' $(SIM_EXTRA_LIST))
 
 all: buildtap buildsim
 buildtap: tapdev
-buildsim: simlog
+buildsim: comp
 
 tapdev: tapdev.c
 	gcc -o tapdev -Wall -O tapdev.c -pthread -lrt
 
 dirs:
-	mkdir -p $(BUILD_DIR)
-	mkdir -p unisim xpm
+	mkdir -p $(BUILD_DIR) unisim xpm
 
 xpm: dirs
 	$(VLOG) -work glbl $(XILINX)/../../../verilog/src/glbl.v
@@ -89,51 +86,31 @@ xpm: dirs
 	$(VLOG) -work work -sv $(XPM)/xpm_cdc/hdl/xpm_cdc.sv
 	$(VLOG) -work work -sv $(XPM_MEM)/xpm_memory.sv
 
-unisim_pkg: dirs
-	$(VHD) -work work $(XILINX)/unisim_VPKG.vhd
-	$(VHD) -work work $(XILINX)/unisim_VCOMP.vhd
-	$(VHD) -work work $(XILINX)/retarget_VCOMP.vhd
-	$(VHD) -work work $(XILINX)/unisim_retarget_VCOMP.vhd
-
-unisim: unisim_pkg
-	$(VHD) -work work $(XILINX)/retarget/*.vhd
-
-verilog-ethernet: dirs
+hdl: dirs
 	$(info Using simulator: $(SIMULATOR))
-	$(call compile_modules, $(ETH_VERILOG_DIR), $(ETH_MODULES))
-	
-crc-pkg: verilog-ethernet
-	$(info Using simulator: $(SIMULATOR))
-	$(VLOG)  -work work $(VLOG_SV_OPT) $(ROCE_DIR)/utils/crc_byteEn.sv
-	$(VHD)  -work work -2008 $(CRC32_DIR)/CRC32/CRC32_pkg.vhd
-	$(VHD)  -work work -2008 $(CRC32_DIR)/CRC32/CRC32_D512_matrix.vhd
-	$(VHD)  -work work -2008 $(CRC32_DIR)/Experimental/CRC32_matrix_pipeline.vhd
-	
-RoCE-stack: crc-pkg
-	$(info Using simulator: $(SIMULATOR))
-	$(call compile_modules, $(ROCE_DIR), $(ROCE_MODULES))
+	$(if $(SYN_VHD),$(VHD) -work work -2008 $(addprefix $(FPGA_PROJ_DIR)/,$(SYN_VHD)))
+	$(if $(SYN_V),$(VLOG) -work work $(addprefix $(FPGA_PROJ_DIR)/,$(SYN_V)))
+	$(if $(SYN_SV),$(VLOG) -work work $(VLOG_SV_OPT) $(addprefix $(FPGA_PROJ_DIR)/,$(SYN_SV)))
+	$(if $(EXTRA_VHD),$(VHD) -work work -2008 $(addprefix $(MAIN_DIR)/,$(EXTRA_VHD)))
+	$(if $(EXTRA_V),$(VLOG) -work work $(addprefix $(MAIN_DIR)/,$(EXTRA_V)))
+	$(if $(EXTRA_SV),$(VLOG) -work work $(VLOG_SV_OPT) $(addprefix $(MAIN_DIR)/,$(EXTRA_SV)))
 
-simlog: dirs xpm
-	$(info Using simulator: $(SIMULATOR))
-	$(VLOG) -work work $(VLOG_SV_OPT) $(ROCE_DIR_SIM)/fpga_core_10g_generic_with_roce_sim.sv
-	$(VDPI) $(TARGET_DPI).c
-	$(VLOG) -work work $(VLOG_SV_OPT) $(ROCE_DIR_SIM)/tb.sv
-
+comp: xpm hdl
 ifeq ($(SIMULATOR), VIVADO)
-	xelab work.tb glbl.glbl -sv_lib dpi -debug typical
+	$(VDPI) $(TARGET_DPI).c
+	xelab work.tb glbl.glbl -sv_lib dpi -debug typical --timescale 1ns/1ps
 else
-	$(VLOG) -work work $(VLOG_SV_OPT) $(ROCE_DIR_SIM)/tb.sv
+	$(VLOG) -work work $(VLOG_SV_OPT) $(MAIN_DIR)/sim/tb.sv
 endif
 
-
 tap: tapdev
-	sudo ./$(TARGET_TAP) tap0 
-	
-sim: 
+	sudo ./$(TARGET_TAP) tap0
+
+sim:
 ifeq ($(SIMULATOR), VIVADO)
 	sudo env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)#glbl.glbl -gui
 else
-	sudo env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB) 
+	sudo env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)
 endif
 
 
