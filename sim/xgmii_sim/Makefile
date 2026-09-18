@@ -108,9 +108,9 @@ tap: tapdev
 
 sim:
 ifeq ($(SIMULATOR), VIVADO)
-	sudo env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)#glbl.glbl -gui
+	env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)#glbl.glbl -gui
 else
-	sudo env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)
+	env "PATH=$(PATH)" "LM_LICENSE_FILE=$(LICENCE_SERVER)" $(VSIM) $(VOPTARGS) work.$(TARGET_TB)
 endif
 
 

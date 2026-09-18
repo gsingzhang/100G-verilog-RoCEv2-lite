@@ -704,41 +704,41 @@ module fpga_core #(
     
     assign cfg_throughput_avg_po2 = cfg_throughput_avg_po2_reg;
   
-  /*
-  generate
-    if (DEBUG) begin
-  	ila_eth ila_eth_payload_rx(
-          .clk(clk),
-          .probe0(rx_eth_payload_axis_tdata),
-          .probe1(rx_eth_payload_axis_tkeep),
-          .probe2(rx_eth_payload_axis_tvalid),
-          .probe3(rx_eth_payload_axis_tready),
-          .probe4(rx_eth_payload_axis_tlast),
-          .probe5(rx_eth_payload_axis_tuser),
-          .probe6(rx_eth_hdr_valid),
-          .probe7(rx_eth_hdr_ready),
-          .probe8(rx_eth_dest_mac),
-          .probe9(rx_eth_src_mac),
-          .probe10(rx_eth_type)
-        );
-        
-        ila_eth ila_eth_payload_tx(
-          .clk(clk),
-          .probe0(tx_eth_payload_axis_tdata),
-          .probe1(tx_eth_payload_axis_tkeep),
-          .probe2(tx_eth_payload_axis_tvalid),
-          .probe3(tx_eth_payload_axis_tready),
-          .probe4(tx_eth_payload_axis_tlast),
-          .probe5(tx_eth_payload_axis_tuser),
-          .probe6(tx_eth_hdr_valid),
-          .probe7(tx_eth_hdr_ready),
-          .probe8(tx_eth_dest_mac),
-          .probe9(tx_eth_src_mac),
-          .probe10(tx_eth_type)
-        );
-    end
-  endgenerate
-  */
+  
+  //generate
+    //if (DEBUG) begin
+  ila_eth ila_eth_payload_rx(
+        .clk(clk),
+        .probe0(rx_udp_payload_axis_tdata),
+        .probe1(rx_udp_payload_axis_tkeep),
+        .probe2(rx_udp_payload_axis_tvalid),
+        .probe3(rx_udp_payload_axis_tready),
+        .probe4(rx_udp_payload_axis_tlast),
+        .probe5(rx_udp_payload_axis_tuser),
+        .probe6(rx_udp_hdr_valid),
+        .probe7(rx_udp_hdr_ready),
+        .probe8(rx_udp_eth_dest_mac),
+        .probe9(rx_udp_eth_src_mac),
+        .probe10(rx_udp_eth_type)
+    );
+
+    ila_eth ila_eth_payload_tx(
+        .clk(clk),
+        .probe0(tx_udp_payload_axis_tdata),
+        .probe1(tx_udp_payload_axis_tkeep),
+        .probe2(tx_udp_payload_axis_tvalid),
+        .probe3(tx_udp_payload_axis_tready),
+        .probe4(tx_udp_payload_axis_tlast),
+        .probe5(tx_udp_payload_axis_tuser),
+        .probe6(tx_udp_hdr_valid),
+        .probe7(tx_udp_hdr_ready),
+        .probe8(tx_udp_ip_source_ip),
+        .probe9(tx_udp_ip_dest_ip),
+        .probe10(tx_udp_source_port)
+    );
+    //end
+  //endgenerate
+ 
 endmodule
 
 `resetall

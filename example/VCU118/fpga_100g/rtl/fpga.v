@@ -533,7 +533,7 @@ module fpga (
       .rx_pfc_ack(qsfp2_rx_pfc_ack)
   );
  `endif
- /*
+ 
  ila_axis ila_eth_rx(
     .clk(qsfp1_rx_clk_int),
     .probe0(qsfp1_rx_axis_tdata_int),
@@ -553,19 +553,19 @@ ila_axis ila_eth_tx(
     .probe4(qsfp1_tx_axis_tlast_int),
     .probe5(qsfp1_tx_axis_tuser_int)
 );
-*/
+
 
   wire [7:0] led_int;
-  /*
-  assign led[0] = sw[0] ? qsfp1_rx_block_lock_1 : led_int[0];
-  assign led[1] = sw[0] ? qsfp1_rx_block_lock_2 : led_int[1];
-  assign led[2] = sw[0] ? qsfp1_rx_block_lock_3 : led_int[2];
-  assign led[3] = sw[0] ? qsfp1_rx_block_lock_4 : led_int[3];
-  assign led[4] = sw[0] ? qsfp2_rx_block_lock_1 : led_int[4];
-  assign led[5] = sw[0] ? qsfp2_rx_block_lock_2 : led_int[5];
-  assign led[6] = sw[0] ? qsfp2_rx_block_lock_3 : led_int[6];
-  assign led[7] = sw[0] ? qsfp2_rx_block_lock_4 : led_int[7];
-  */
+  
+  assign led[0] = led_int[0];
+  assign led[1] = led_int[1];
+  assign led[2] = led_int[2];
+  assign led[3] = led_int[3];
+  assign led[4] = qsfp1_rst;
+  assign led[5] = rst_125mhz_int;
+  assign led[6] = mmcm_locked;
+  assign led[7] = mmcm_rst;
+  
   axis_async_fifo #(
       .DEPTH(4200),
       .DATA_WIDTH(512),
