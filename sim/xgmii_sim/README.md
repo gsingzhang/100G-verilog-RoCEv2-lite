@@ -3,7 +3,7 @@ Interactive simulation of the HDL network stack.
 
 ## ARGUMENTS
 Change them as required
-- `SIMULATOR`: `QUESTA` ora `VIVADO` for now (migth add VCS, RIviera and Xcelium)
+- `SIMULATOR`: `VIVADO`, `QUESTA` or `VCS` (might add Riviera and Xcelium)
 - `MAIN_DIR`: main repo directory
 - `LICENCE_SERVER`: Licence server required to run QUESTA
 - `VIVADO_PATH`: VIVADO installation path, default is `/tools/Xilinx/Vivado/2022.2`
@@ -28,6 +28,11 @@ sudo ifconfig tap0 22.1.212.21 mtu 4200
 ## Run the sim
 ```
 make sim SIMULATOR=VIVADO LICENCE_SERVER=<your-lic-server>
+```
+## Run the sim (VCS)
+```
+make comp SIMULATOR=VCS
+make sim SIMULATOR=VCS
 ```
 # VM setup
 Vitrual machine(s) with SoftRocE are available in the `roce-x11` folder. *REMEBER* to bridge the tap device to the vm and give it a different IP. 

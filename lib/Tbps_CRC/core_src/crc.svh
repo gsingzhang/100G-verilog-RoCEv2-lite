@@ -92,12 +92,12 @@ function bit [PIPE_LVL:0][31:0] get_n_terms(
     return n_terms;
 endfunction
 
-function bit [PIPE_LVL:0][CRC_WIDTH-1:0][(DWIDTH-1)/DIV_PER_LVL:0] get_branch_enable_table(
+function bit [PIPE_LVL:0][CRC_WIDTH-1:0][(DWIDTH-1)/get_div_per_lvl():0] get_branch_enable_table(
     input [CRC_WIDTH-1:0][DWIDTH-1:0] data_table,
     input int divider_per_lvl,
     input bit [PIPE_LVL:0][31:0] n_terms
 );
-    static bit [PIPE_LVL:0][CRC_WIDTH-1:0][(DWIDTH-1)/DIV_PER_LVL:0] branch_enable_table = {(PIPE_LVL+1){{CRC_WIDTH{{((DWIDTH-1)/DIV_PER_LVL+1){1'b0}}}}}};
+    static bit [PIPE_LVL:0][CRC_WIDTH-1:0][(DWIDTH-1)/get_div_per_lvl():0] branch_enable_table = {(PIPE_LVL+1){{CRC_WIDTH{{((DWIDTH-1)/get_div_per_lvl()+1){1'b0}}}}}};
     int n_terms_int;
     if (PIPE_LVL != 0) begin
         n_terms_int = int'(n_terms[0]);

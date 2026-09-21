@@ -82,7 +82,7 @@ begin
         begin
             if rising_edge(clk) then
                 if valid_shreg(STEPS - 2) then
-                    keep_block_number <= keep2blocknumber((KEEP_WIDTH-1 downto 0 => keep_shreg(STEPS - 2), others => '0'));
+                    keep_block_number <= keep2blocknumber(std_logic_vector(resize(unsigned(keep_shreg(STEPS - 2)), 128)));
                 end if;
             end if;
         end process;

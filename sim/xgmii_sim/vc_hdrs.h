@@ -44,10 +44,6 @@ typedef struct VeriC_Descriptor *vc_handle;
  extern int shared_mem_init();
 
  extern void tap2xgmii(/* OUTPUT */int *ret);
- 
- extern void gmii2pipe(/* INPUT */unsigned int frame_len);
- 
- extern int parse_data(/* INPUT */unsigned long long data, /* INPUT */unsigned char control);
 
  extern int xgmii_read(/* INPUT */long long xgmiiTxd, /* INPUT */char xgmiiTxc);
 
